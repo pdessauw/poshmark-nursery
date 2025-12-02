@@ -66,9 +66,9 @@ python posh_nursery.py Y N 1800 Y
 python posh_nursery.py Y N 1800 Y Y
 ```
 
-<p align="center">
-  <img src="demo-image-01.gif">
-</p>
+<div style="text-align: center;">
+  <img src="_docs/demo.gif" alt="Example of sharing activity" style="width: 90%;">
+</div>
 
 Tip: Consider sharing in "headless" mode. This will eliminate the selenium driven chrome window from popping up. Uncomment these 2 lines in the "posh_nursery.py" file by removing the # in front of the 2 lines:
 ```
