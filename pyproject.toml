@@ -1,19 +1,29 @@
 [project]
 name = "poshmark-nursery"
 version = "1.0.0"
-description = """
-    Poshmark sharing bot. Share your items and share back the closets of people who
-    shared your items.
+description = """\
+    Poshmark sharing bot. Share your items and share back the closets of people who \
+    shared your items.\
 """
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "selenium>=4.38.0",
+    "pyyaml>=6.0.3",
+    "selenium>=4.39.0",
 ]
 
 [dependency-groups]
 dev = [
-    "black>=25.11.0",
-    "flake8>=7.3.0",
-    "pylint>=4.0.4",
+    "ruff>=0.14.13",
 ]
+
+[tool.ruff]
+line-length = 89
+
+[tool.ruff.format]
+line-ending = "lf"
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = true
+docstring-code-format = true
+docstring-code-line-length = 89
