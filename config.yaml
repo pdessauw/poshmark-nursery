@@ -1,3 +1,10 @@
 credentials:
   username: ""
   password: ""
+sharing:
+  slow_mode: true
+  wait_time: 3600
+  check_captcha: true
+  share_closets_from_file: false
+  share_back: false
+  maintain_order_based_on_order_file: false

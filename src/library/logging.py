@@ -2,7 +2,7 @@
 
 import logging.config
 
-from library.settings import BASE_DIR, DEBUG
+from library.settings import BASE_DIR
 
 LOGGER_CONFIG = {
     "version": 1,
@@ -27,11 +27,7 @@ LOGGER_CONFIG = {
         },
     },
     "loggers": {
-        "app": {
-            "level": "DEBUG" if DEBUG else "INFO",
-            "handlers": ["console", "file"],
-            "propagate": "no",
-        }
+        "app": {"level": "INFO", "handlers": ["console", "file"], "propagate": "no"}
     },
 }
 

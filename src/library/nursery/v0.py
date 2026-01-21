@@ -1,16 +1,17 @@
+"""Initial version of the PoshNursery. Kept for investigative purposes"""
+
 import pdb
 import random
 import sys
 import time
 from datetime import datetime, timedelta
+
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-
-import config
 
 
 class PoshNursery:
@@ -29,7 +30,7 @@ class PoshNursery:
         self.username = username
         self.password = password
         self.numItemsToShareFromOtherClosets = 8
-        self.timeOutSecs = 10
+        self.timeout_secs = 30
         self.scrollWaitTime = 5
         self.numTimesToScroll = 5
         self.chrome_options = Options()
@@ -78,8 +79,8 @@ class PoshNursery:
         self.debug = debug
         self.shareBack = share_back
         self.slowMode = slow_mode
-        self.timeToWait = wait_time
-        self.driver.minimize_window()
+        self.wait_time = wait_time
+        # self.driver.minimize_window()  # FIXME this part is failing
 
     def clearsAndResets(self, sharingMine=True):
         if sharingMine:
@@ -99,10 +100,10 @@ class PoshNursery:
         return random.randrange(1, 5, 1)
 
     def waitTillClickable(self, findByIdOrPath, idOrPath, timeOutSecs=10):
-        clickableElement = False
+        # clickable_element = False
         if findByIdOrPath == "id":
             try:
-                clickableElement = WebDriverWait(self.driver, timeOutSecs).until(
+                clickable_element = WebDriverWait(self.driver, timeOutSecs).until(
                     EC.element_to_be_clickable((By.ID, idOrPath))
                 )
             except TimeoutException as e:
@@ -117,7 +118,7 @@ class PoshNursery:
                 return False
         else:
             try:
-                clickableElement = WebDriverWait(self.driver, timeOutSecs).until(
+                clickable_element = WebDriverWait(self.driver, timeOutSecs).until(
                     EC.element_to_be_clickable((By.XPATH, idOrPath))
                 )
             except TimeoutException as e:
@@ -130,11 +131,11 @@ class PoshNursery:
                     + str(e)
                 )
                 return False
-        return clickableElement
+        return clickable_element
 
     def waitForAnElementByXPath(self, xpath, elementName):
         try:
-            element = WebDriverWait(self.driver, self.timeOutSecs).until(
+            element = WebDriverWait(self.driver, self.timeout_secs).until(
                 EC.presence_of_element_located((By.XPATH, xpath))
             )
         except TimeoutException as e:
@@ -160,18 +161,18 @@ class PoshNursery:
                 pdb.set_trace()
         return element
 
-    def enterTxtSlowly(self, element, text):
+    def enter_text_slowly(self, element, text):
         for char in text:
             element.send_keys(char)
-            time.sleep(random.random())
+            time.sleep(random.ran() / 10)
 
-    def enterUserName(self):
+    def enter_username(self):
         userNameElement = self.getLogInElement(self.loginID, self.loginXPath)
         if not userNameElement:
             print("Username element not obtained from page, exiting...")
             self.quit()
             sys.exit()
-        self.enterTxtSlowly(userNameElement, self.username)
+        self.enter_text_slowly(userNameElement, self.username)
 
     def enterAndSubmitPassword(self):
         passwordElement = self.getLogInElement(self.passwordID, self.passwordXPath)
@@ -179,17 +180,20 @@ class PoshNursery:
             print("Password element not obtained from page, exiting...")
             self.quit()
             sys.exit()
-        self.enterTxtSlowly(passwordElement, self.password)
+        self.enter_text_slowly(passwordElement, self.password)
         passwordElement.submit()
 
     def login(self):
         self.driver.get(self.loginUrl)
-        self.enterUserName()
-        self.enterAndSubmitPassword()
+        self.enter_username()
+        self.enterAndSubmitPassword()  # FIXME need to split to type password and then submit
+        # self.submit_login()
         if self.debug:
             print(self.driver.title)
         try:
-            WebDriverWait(self.driver, self.timeOutSecs).until(EC.title_contains("Feed"))
+            WebDriverWait(self.driver, self.timeout_secs).until(
+                EC.title_contains("Feed")
+            )
         except Exception as e:
             print("ERROR: logging error{}".format(e))
             print("Please solve captcha and then type 'c' or 'continue'")
@@ -332,7 +336,7 @@ class PoshNursery:
 
     def waitTillShareModalIsGone(self, shareModal):
         try:
-            shareModalIsGone = WebDriverWait(self.driver, self.timeOutSecs).until(
+            WebDriverWait(self.driver, self.timeout_secs).until(
                 EC.invisibility_of_element_located(shareModal)
             )  # wait until the share modal is gone
         except TimeoutException as e:
@@ -504,11 +508,11 @@ class PoshNursery:
                     self.shareBackAndFollowOtherClosets()
                 print(
                     "Shared closet, will share again in "
-                    + str(timeToWait / 60)
+                    + str(self.wait_time / 60)
                     + " mins at "
-                    + str(datetime.now() + timedelta(seconds=timeToWait))
+                    + str(datetime.now() + timedelta(seconds=self.wait_time))
                 )
-                time.sleep(self.timeToWait)
+                time.sleep(self.wait_time)
 
     def shareAnotherCloset(
         self, closetName, sharingAFew=False
@@ -580,5 +584,5 @@ class PoshNursery:
         if self.getClosetsToShareFromFile():
             for closet in self.closetsToShare:
                 print("Sharing " + closet)
-                closetAvailableUrl = self.getClosetAvailableUrl(closet)
+                _ = self.getClosetAvailableUrl(closet)
                 self.shareAnotherCloset(closet)
