@@ -13,6 +13,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
+from library.logging import LOGGER
+
 
 class PoshNursery:
     def __init__(self, username, password):
@@ -161,6 +163,7 @@ class PoshNursery:
         expected_offset: int = -1,
         max_tries: int = 10,
     ):
+        LOGGER.debug("(wait_for_offset) wait_multiplier: %f; do_scroll: %d; expected_offset: %d; max_tries: %d", wait_multiplier, do_scroll, expected_offset, max_tries)
         tries = 0
         reached_expected_offset = False
         last_offset = (
@@ -176,7 +179,8 @@ class PoshNursery:
             current_offset = self.driver.execute_script("return pageYOffset")
             reached_expected_offset = last_offset == current_offset
 
-            if expected_offset != -1:
+            LOGGER.debug("Page offset: Current %s; Last: %s", current_offset, last_offset)
+            if expected_offset == -1:
                 last_offset = current_offset
 
             tries += 1
