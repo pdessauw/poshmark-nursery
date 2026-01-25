@@ -10,7 +10,7 @@ import undetected as uc
 from selenium.common import TimeoutException, NoSuchElementException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support import expected_conditions as EC  # noqa
 from selenium.webdriver.support.wait import WebDriverWait
 
 from library.logging import LOGGER
@@ -52,47 +52,31 @@ class PoshNursery:
         self.driver.quit()
 
     def wait_till_clickable(self, find_by_id_or_path, id_or_path, time_out_secs=10):
-        # clickable_element = False
-        if find_by_id_or_path == "id":
-            try:
-                clickable_element = WebDriverWait(self.driver, time_out_secs).until(
-                    EC.element_to_be_clickable((By.ID, id_or_path))
-                )
-            except TimeoutException as e:
-                print(
-                    "Timed out at locating element by "
-                    + find_by_id_or_path
-                    + " at "
-                    + str(id_or_path)
-                    + ": "
-                    + str(e)
-                )
-                return False
-        else:
-            try:
-                clickable_element = WebDriverWait(self.driver, time_out_secs).until(
-                    EC.element_to_be_clickable((By.XPATH, id_or_path))
-                )
-            except TimeoutException as e:
-                print(
-                    "Timed out at locating element by "
-                    + find_by_id_or_path
-                    + " at "
-                    + str(id_or_path)
-                    + ": "
-                    + str(e)
-                )
-                return False
+        locator_type = By.ID if find_by_id_or_path == "id" else By.XPATH
+
+        try:
+            clickable_element = WebDriverWait(self.driver, time_out_secs).until(
+                EC.element_to_be_clickable((locator_type, id_or_path))
+            )
+        except TimeoutException as e:
+            LOGGER.error(
+                "Timed out at locating element by %s at %s: %s",
+                find_by_id_or_path,
+                str(id_or_path),
+                str(e),
+            )
+            return False
+
         return clickable_element
 
     def get_login_element(self, element_id, element_xpath):
         element = self.wait_till_clickable("id", element_id)
         if not element:
-            print("Time out at locating ID: " + element_id)
+            LOGGER.warning("Time out at locating ID: " + element_id)
             element = self.wait_till_clickable("xpath", element_xpath)
             if not element:
-                print("Timed out again with xpath")
-                print(
+                LOGGER.error("Timed out again with xpath")
+                LOGGER.error(
                     "Please manually enter username/password, then type 'c' or 'continue'"
                 )
         return element
@@ -105,7 +89,7 @@ class PoshNursery:
     def enter_username(self):
         username_element = self.get_login_element(self.loginID, self.loginXPath)
         if not username_element:
-            print("Username element not obtained from page, exiting...")
+            LOGGER.error("Username element not obtained from page, exiting...")
             self.teardown()
             sys.exit()
         self.enter_text_slowly(username_element, self.username)
@@ -113,13 +97,15 @@ class PoshNursery:
     def enter_and_submit_password(self):
         password_element = self.get_login_element(self.passwordID, self.passwordXPath)
         if not password_element:
-            print("Password element not obtained from page, exiting...")
+            LOGGER.error("Password element not obtained from page, exiting...")
             self.teardown()
             sys.exit()
         self.enter_text_slowly(password_element, self.password)
         password_element.submit()
 
-    def get_clickable_element(self, selector_type, selector_locator, root_element=None, retries=5):
+    def get_clickable_element(
+        self, selector_type, selector_locator, root_element=None, retries=5
+    ):
         last_exc = None
         wait_multiplier = 2
 
@@ -135,7 +121,7 @@ class PoshNursery:
 
             wait_multiplier *= 2  # If an error is detected, raise the wait threshold.
 
-        # after retries exhausted, re-raise or handle
+        # After retries are exhausted, re-raise or handle
         raise last_exc
 
     def navigate_and_click(self, element):
@@ -160,7 +146,7 @@ class PoshNursery:
         try:
             WebDriverWait(self.driver, 10).until(EC.title_contains("Log In"))
         except Exception as e:
-            print(f"ERROR: Cannot find 'Log In' element in page: {str(e)}")
+            LOGGER.error(f"ERROR: Cannot find 'Log In' element in page: {str(e)}")
             self.teardown()
             sys.exit()
 
@@ -171,7 +157,7 @@ class PoshNursery:
         try:
             WebDriverWait(self.driver, 60).until(EC.title_contains("Feed"))
         except Exception as e:
-            print(f"ERROR: {str(e)}")
+            LOGGER.error(f"ERROR: {str(e)}")
             self.teardown()
             sys.exit()
 
@@ -182,7 +168,13 @@ class PoshNursery:
         expected_offset: int = -1,
         max_tries: int = 10,
     ):
-        LOGGER.debug("(wait_for_offset) wait_multiplier: %f; do_scroll: %d; expected_offset: %d; max_tries: %d", wait_multiplier, do_scroll, expected_offset, max_tries)
+        LOGGER.debug(
+            "(wait_for_offset) wait_multiplier: %f; do_scroll: %d; expected_offset: %d; max_tries: %d",
+            wait_multiplier,
+            do_scroll,
+            expected_offset,
+            max_tries,
+        )
         tries = 0
         reached_expected_offset = False
         last_offset = (
@@ -198,7 +190,9 @@ class PoshNursery:
             current_offset = self.driver.execute_script("return pageYOffset")
             reached_expected_offset = last_offset == current_offset
 
-            LOGGER.debug("Page offset: Current %s; Last: %s", current_offset, last_offset)
+            LOGGER.debug(
+                "Page offset: Current %s; Last: %s", current_offset, last_offset
+            )
             if expected_offset == -1:
                 last_offset = current_offset
 
@@ -255,7 +249,9 @@ class PoshNursery:
         closet_input_element = self.get_clickable_element(
             By.CSS_SELECTOR, "input[value='closet']"
         )
-        closet_div_element = self.get_clickable_element(By.XPATH, "..", root_element=closet_input_element)
+        closet_div_element = self.get_clickable_element(
+            By.XPATH, "..", root_element=closet_input_element
+        )
         self.navigate_and_click(closet_div_element)
 
         # Filter by women
@@ -273,8 +269,9 @@ class PoshNursery:
         closet_input_element = self.get_clickable_element(
             By.CSS_SELECTOR, "input[name='availability'][value='available']"
         )
-        closet_div_element = self.get_clickable_element(By.XPATH, "..",
-                                                        root_element=closet_input_element)
+        closet_div_element = self.get_clickable_element(
+            By.XPATH, "..", root_element=closet_input_element
+        )
         self.navigate_and_click(closet_div_element)
 
         # Scroll down to display all items and wait between 1.5 and 2.5 seconds to ensure
@@ -308,7 +305,7 @@ class PoshNursery:
         self.navigate_and_click(share_to_followers_button)
 
         # Wait that the offset has not moved in the last X secondes
-        wait_multiplier = 10.
+        wait_multiplier = 10.0
         for _ in range(5):
             try:
                 self.wait_for_offset(
@@ -318,7 +315,7 @@ class PoshNursery:
                 LOGGER.warning(
                     "An unexpected exception occurred while waiting for sharing to "
                     "finish: %s",
-                    str(exc)
+                    str(exc),
                 )
                 self.wait(wait_multiplier)
                 wait_multiplier *= 1.5
