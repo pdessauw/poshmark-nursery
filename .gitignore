@@ -192,3 +192,7 @@ radon.xml
 #virtual env
 .venv/
 
+# cookies file
+cookies.bin
+
+
