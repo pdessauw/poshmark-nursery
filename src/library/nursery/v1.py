@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 
 import undetected as uc
-from selenium.common import TimeoutException
+from selenium.common import TimeoutException, NoSuchElementException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -119,6 +119,25 @@ class PoshNursery:
         self.enter_text_slowly(password_element, self.password)
         password_element.submit()
 
+    def get_clickable_element(self, selector_type, selector_locator, root_element=None, retries=5):
+        last_exc = None
+        wait_multiplier = 2
+
+        if not root_element:
+            root_element = self.driver
+
+        for _ in range(retries):
+            try:
+                return root_element.find_element(selector_type, selector_locator)
+            except NoSuchElementException as e:
+                last_exc = e
+                self.wait(wait_multiplier)
+
+            wait_multiplier *= 2  # If an error is detected, raise the wait threshold.
+
+        # after retries exhausted, re-raise or handle
+        raise last_exc
+
     def navigate_and_click(self, element):
         actions = ActionChains(self.driver)
         actions.move_to_element(element).perform()
@@ -135,7 +154,7 @@ class PoshNursery:
         )
 
     def login(self):
-        login_element = self.driver.find_element(By.LINK_TEXT, "Log in")
+        login_element = self.get_clickable_element(By.LINK_TEXT, "Log in")
         self.navigate_and_click(login_element)
 
         try:
@@ -204,21 +223,21 @@ class PoshNursery:
 
         # Open user profile dropdown
         user_dropdown_selector = ".user-image.user-image--s"
-        user_dropdown_element = self.driver.find_element(
+        user_dropdown_element = self.get_clickable_element(
             By.CSS_SELECTOR, user_dropdown_selector
         )
         self.navigate_and_click(user_dropdown_element)
 
         # Click on My Closet
         user_closet_selector = "li.dropdown__menu__item:nth-child(1)"
-        user_closet_element = self.driver.find_element(
+        user_closet_element = self.get_clickable_element(
             By.CSS_SELECTOR, user_closet_selector
         )
         self.navigate_and_click(user_closet_element)
 
         # Open Bulk Tools dropdown
         bulk_tools_selector = ".icon.icon-bulk-tools"
-        bulk_tools_element = self.driver.find_element(
+        bulk_tools_element = self.get_clickable_element(
             By.CSS_SELECTOR, bulk_tools_selector
         )
         self.navigate_and_click(bulk_tools_element)
@@ -227,20 +246,20 @@ class PoshNursery:
         share_to_followers_dropdown = (
             "div.dropdown__link[data-et-name='share_to_followers']"
         )
-        share_to_followers_element = self.driver.find_element(
+        share_to_followers_element = self.get_clickable_element(
             By.CSS_SELECTOR, share_to_followers_dropdown
         )
         self.navigate_and_click(share_to_followers_element)
 
         # Filter by closet
-        closet_input_element = self.driver.find_element(
+        closet_input_element = self.get_clickable_element(
             By.CSS_SELECTOR, "input[value='closet']"
         )
-        closet_div_element = closet_input_element.find_element(By.XPATH, "..")
+        closet_div_element = self.get_clickable_element(By.XPATH, "..", root_element=closet_input_element)
         self.navigate_and_click(closet_div_element)
 
         # Filter by women
-        women_element = self.driver.find_element(
+        women_element = self.get_clickable_element(
             By.CSS_SELECTOR, "a[data-et-prop-content='Women']"
         )
         self.navigate_and_click(women_element)
@@ -251,10 +270,11 @@ class PoshNursery:
             self.wait()
 
         # Filter by available
-        closet_input_element = self.driver.find_element(
+        closet_input_element = self.get_clickable_element(
             By.CSS_SELECTOR, "input[name='availability'][value='available']"
         )
-        closet_div_element = closet_input_element.find_element(By.XPATH, "..")
+        closet_div_element = self.get_clickable_element(By.XPATH, "..",
+                                                        root_element=closet_input_element)
         self.navigate_and_click(closet_div_element)
 
         # Scroll down to display all items and wait between 1.5 and 2.5 seconds to ensure
@@ -262,20 +282,9 @@ class PoshNursery:
         self.wait_for_offset(
             wait_multiplier=5, do_scroll=1, expected_offset=-1, max_tries=1_000
         )
-        # reached_page_end = False
-        # last_height = self.driver.execute_script("return pageYOffset")
-        #
-        # while not reached_page_end:
-        #     self.driver.execute_script(f"window.scrollBy(0, {self.height});")
-        #     self.wait(4)  # Wait between 1.2 and 2 seconds
-        #
-        #     new_height = self.driver.execute_script("return pageYOffset")
-        #
-        #     reached_page_end = last_height == new_height
-        #     last_height = new_height
 
         # Scroll back to top
-        scroll_to_top_button = self.driver.find_element(
+        scroll_to_top_button = self.get_clickable_element(
             By.CSS_SELECTOR, "button[data-et-name='scroll_to_top']"
         )
         self.navigate_and_click(scroll_to_top_button)
@@ -286,55 +295,33 @@ class PoshNursery:
             wait_multiplier=2, do_scroll=0, expected_offset=0, max_tries=10
         )
 
-        # tries = 0
-        # at_top = False
-        #
-        # while tries < 10 and not at_top:
-        #     self.wait(2)  # Wait betwen 0.6 and 1 seconds
-        #     at_top = self.driver.execute_script("return pageYOffset") == 0
-        #     tries += 1
-        #
-        # if tries == 10 and not at_top:
-        #     raise Exception("not at top :(")
-
         # Select all
-        select_all_text_element = self.driver.find_element(
+        select_all_text_element = self.get_clickable_element(
             By.CSS_SELECTOR, "section.main__column > div.d--fl > div.tile__checkbox"
         )
         self.navigate_and_click(select_all_text_element)
 
         # Share to followers
-        share_to_followers_button = self.driver.find_element(
+        share_to_followers_button = self.get_clickable_element(
             By.CSS_SELECTOR, "button.btn[data-et-name='share_to_followers']"
         )
         self.navigate_and_click(share_to_followers_button)
 
         # Wait that the offset has not moved in the last X secondes
-        self.wait_for_offset(
-            wait_multiplier=7, do_scroll=0, expected_offset=-1, max_tries=1_000
-        )
+        wait_multiplier = 10.
+        for _ in range(5):
+            try:
+                self.wait_for_offset(
+                    wait_multiplier=7, do_scroll=0, expected_offset=-1, max_tries=1_000
+                )
+            except Exception as exc:
+                LOGGER.warning(
+                    "An unexpected exception occurred while waiting for sharing to "
+                    "finish: %s",
+                    str(exc)
+                )
+                self.wait(wait_multiplier)
+                wait_multiplier *= 1.5
 
-        # tries = 0
-        # at_top = False
-        # last_offset = self.driver.execute_script("return pageYOffset")
-        # current_offset = None
-        #
-        # while tries < 1_000 and last_offset != current_offset:
-        #     self.wait(7)  # Wait between 2.1 and 3.5 seconds
-        #     current_offset = self.driver.execute_script("return pageYOffset")
-        #     tries += 1
-        #
-        # if tries == 1_000 and not at_top:
-        #     raise Exception("not at top :(")
-
-        # time.sleep(5)
         self.teardown()
         sys.exit()
-
-
-# tc = TestItchiologin()
-# try:
-#     tc.test_itchiologin()
-# except Exception as e:
-#     print(f"An unexpected error occured: {str(e)}")
-#     tc.teardown()
